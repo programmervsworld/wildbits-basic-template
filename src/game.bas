@@ -1,7 +1,8 @@
 #define SPRITE_START $30000
 #define PROJECT_NAME mybasicgame
+#define SPRITE_FILE spr_mybasicgame
 cls:sprites on:bitmap on:bitmap clear 10
-bload "spr_mybasicgame.bin", $30000
+bload "SPRITE_FILE.bin", $30000
 helloworld()
 end
 proc helloworld()

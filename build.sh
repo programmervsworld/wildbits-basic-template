@@ -37,7 +37,11 @@ send_sprites() {
     fi
 }
 
+sudo python3 --version
+
 sed -i "s/^#define PROJECT_NAME .*/#define PROJECT_NAME ${projectname}/" src/game.bas
+sed -i "s/^#define SPRITE_FILE .*/#define SPRITE_FILE ${spritebin}/" src/game.bas
+
 cat src/game.bas | python3 scripts/number.py > "build/$projectname.bas"
 
 python3 scripts/spritebuild2.py sprites/sprites.def
