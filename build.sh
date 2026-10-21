@@ -2,6 +2,16 @@
 
 projectname="mybasicgame"
 spritebin=spr_${projectname}
+PYTHON_PATH=""
+
+if command -v python3 > /dev/null 2>&1; then
+        PYTHON_PATH=$(command -v python3)
+elif command -v python > /dev/null 2>&1; then
+        PYTHON_PATH=$(command -v python)
+else
+        echo "Python isn't installed. You have to have it to run this script."
+        exit
+fi
 
 rm -f build/*.zip
 rm -f build/*.bas
@@ -37,20 +47,20 @@ send_sprites() {
     fi
 }
 
-sudo python3 --version
+sudo "$PYTHON_PATH" --version
 
 sed -i "s/^#define PROJECT_NAME .*/#define PROJECT_NAME ${projectname}/" src/game.bas
 sed -i "s/^#define SPRITE_FILE .*/#define SPRITE_FILE ${spritebin}/" src/game.bas
 
-cat src/game.bas | python3 scripts/number.py > "build/$projectname.bas"
+cat src/game.bas | "$PYTHON_PATH" scripts/number.py > "build/$projectname.bas"
 
-python3 scripts/spritebuild2.py sprites/sprites.def
+"$PYTHON_PATH" scripts/spritebuild2.py sprites/sprites.def
 
 # This is a hack since copy can't send from directories for whatever reason
 mv graphics.bin ${spritebin}.bin
 echo "Sending sprites to device...."
 printf '\033[1;95m👾 Deploying tiny weirdos…\033[0m\n'
-send_sprites sudo python3 fnxmgr.zip --copy ${spritebin}.bin
+send_sprites sudo "$PYTHON_PATH" fnxmgr.zip --copy ${spritebin}.bin
 printf '\033[1;92m✓ Tiny weirdos deployed. Do not feed after midnight.\033[0m\n'
 echo -e ""
 read -n 1 -s -p "Press any key to load next part......"
@@ -58,7 +68,7 @@ mv ${spritebin}.bin build/
 echo -e ""
 
 printf '\n\033[1;96m🚀 Beaming BASIC aboard…\033[0m\n'
-sudo python3 fnxmgr.zip --binary build/${projectname}.bas --address 28000
+sudo "$PYTHON_PATH" fnxmgr.zip --binary build/${projectname}.bas --address 28000
 
 printf '\033[1;92m✓ BASIC delivered. The pixels await your command.\033[0m\n'
 printf '\n  On your Wildbits, type:\n'
