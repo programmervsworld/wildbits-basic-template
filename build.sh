@@ -5,8 +5,10 @@ spritebin=spr_${projectname}
 PYTHON_PATH=""
 DEPLOY=false
 CODE_ONLY=false
+EMULATE=false
+MAME_PATH="/home/jdowning/github/mame"
 
-PARSED_ARGS=$(getopt --options d:c --longoptions deploy,code-only --name "$0" -- "$@")
+PARSED_ARGS=$(getopt --options d:c:e --longoptions deploy,code-only,emulate --name "$0" -- "$@")
 if [ $? -ne 0 ]; then exit 1; fi
 eval set -- "$PARSED_ARGS"
 echo "Parsed Args: $PARSED_ARGS"
@@ -15,6 +17,7 @@ while true; do
 	case "$1" in
 		-d|--deploy) DEPLOY=true; shift ;;
 		-c|--code-only) DEPLOY=true; CODE_ONLY=true; shift ;; 
+		-e|--emulate) DEPLOY=false; EMULATE=true; shift ;;
 		--) shift; break ;;
 		*) echo "Error: Unexpected flag $1"; exit 1 ;;
 	esac	
@@ -102,5 +105,14 @@ fi
 mv ${spritebin}.bin build/
 cd build || exit
 zip "$projectname.zip" "$projectname.bas" "$spritebin.bin"
-cd ..
 
+sudo mkdir -p /mnt/f256
+sudo mount -o loop,offset=$((2048 * 512)) f256sd.img /mnt/f256
+sudo cp "$projectname.bas" /mnt/f256/
+sudo cp "$spritebin.bin" /mnt/f256/
+sudo umount /mnt/f256
+
+pwd
+if $EMULATE; then
+	${MAME_PATH}/f256k f256k -rompath ${MAME_PATH}/roms -window -harddisk $(pwd)/f256sd.img
+fi

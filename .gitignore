@@ -1,0 +1,3 @@
+build/cfg
+build/nvram
+build/*.zip
