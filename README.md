@@ -19,3 +19,29 @@ This keeps filenames referenced by the BASIC program consistent with the files p
 You can experiment with this repository directly, but you may need to perform the setup that `wildling.cli` normally handles. Review the project name in `build.sh`, the definitions in `src/game.bas`, and the device settings in `foenixmgr.ini` before building.
 
 `build.sh` builds the BASIC program and sprite data, then transfers them to the connected device. It expects the required tools and hardware connection to be available; cloning the repository alone does not complete that setup.
+
+## Build Script
+
+The build script for this project has a few options that help with cross-development.
+
+### Build Only
+If you provide no options:
+
+```bash
+./build.sh
+```
+You will simply process all directories, move and zip up the final source in the build dir. You can then transport that zip however you'd like to deploy it manually.
+
+### Deploy All
+
+```bash
+./build.sh --deploy
+```
+
+Will deploy all assets and code to the connected F256K2 upon completion. It will prompt you to press a key after each one individually just to prevent issues with using the serial connection.
+
+### Deploy Code Only
+```bash
+./build.sh --code-only
+```
+Will deploy just the basic file to the connected F256K2. This prevents you from having to send the sprites and graphics every time.
