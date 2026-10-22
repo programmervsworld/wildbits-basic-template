@@ -3,6 +3,22 @@
 projectname="mybasicgame"
 spritebin=spr_${projectname}
 PYTHON_PATH=""
+DEPLOY=false
+CODE_ONLY=false
+
+PARSED_ARGS=$(getopt --options d:c --longoptions deploy,code-only --name "$0" -- "$@")
+if [ $? -ne 0 ]; then exit 1; fi
+eval set -- "$PARSED_ARGS"
+echo "Parsed Args: $PARSED_ARGS"
+
+while true; do
+	case "$1" in
+		-d|--deploy) DEPLOY=true; shift ;;
+		-c|--code-only) DEPLOY=true; CODE_ONLY=true; shift ;; 
+		--) shift; break ;;
+		*) echo "Error: Unexpected flag $1"; exit 1 ;;
+	esac	
+done
 
 if command -v python3 > /dev/null 2>&1; then
         PYTHON_PATH=$(command -v python3)
@@ -12,6 +28,9 @@ else
         echo "Python isn't installed. You have to have it to run this script."
         exit
 fi
+
+echo "Deploy is $DEPLOY"
+echo "Code Only is $CODE_ONLY"
 
 rm -f build/*.zip
 rm -f build/*.bas
@@ -52,25 +71,36 @@ sudo "$PYTHON_PATH" --version
 sed -i "s/^#define PROJECT_NAME .*/#define PROJECT_NAME ${projectname}/" src/game.bas
 sed -i "s/^#define SPRITE_FILE .*/#define SPRITE_FILE ${spritebin}/" src/game.bas
 
-cat src/game.bas | "$PYTHON_PATH" scripts/number.py > "build/$projectname.bas"
+"$PYTHON_PATH" scripts/number.py < src/game.bas > "build/$projectname.bas"
 
 "$PYTHON_PATH" scripts/spritebuild2.py sprites/sprites.def
 
 # This is a hack since copy can't send from directories for whatever reason
 mv graphics.bin ${spritebin}.bin
-echo "Sending sprites to device...."
-printf '\033[1;95m👾 Deploying tiny weirdos…\033[0m\n'
-send_sprites sudo "$PYTHON_PATH" fnxmgr.zip --copy ${spritebin}.bin
-printf '\033[1;92m✓ Tiny weirdos deployed. Do not feed after midnight.\033[0m\n'
-echo -e ""
-read -n 1 -s -p "Press any key to load next part......"
+
+if $DEPLOY; then
+	if ! $CODE_ONLY; then
+		echo "Sending sprites to device...."
+		printf '\033[1;95m👾 Deploying tiny weirdos…\033[0m\n'
+		send_sprites sudo "$PYTHON_PATH" fnxmgr.zip --copy ${spritebin}.bin
+		printf '\033[1;92m✓ Tiny weirdos deployed. Do not feed after midnight.\033[0m\n'
+		echo -e ""
+		read -n 1 -s -p "Press any key to load next part......"
+		echo -e ""
+	fi
+
+	printf '\n\033[1;96m🚀 Beaming BASIC aboard…\033[0m\n'
+	sudo "$PYTHON_PATH" fnxmgr.zip --binary build/${projectname}.bas --address 28000
+
+	printf '\033[1;92m✓ BASIC delivered. The pixels await your command.\033[0m\n'
+	printf '\n  On your Wildbits, type:\n'
+	printf '    \033[1;93mXGO\033[0m    — launch the program\n'
+	printf '    \033[1;93mXLOAD\033[0m  — load it for tinkering\n\n'
+fi
+
+# Final step is just to zip up what we did in the build dir so that we have a copy.
 mv ${spritebin}.bin build/
-echo -e ""
+cd build || exit
+zip "$projectname.zip" "$projectname.bas" "$spritebin.bin"
+cd ..
 
-printf '\n\033[1;96m🚀 Beaming BASIC aboard…\033[0m\n'
-sudo "$PYTHON_PATH" fnxmgr.zip --binary build/${projectname}.bas --address 28000
-
-printf '\033[1;92m✓ BASIC delivered. The pixels await your command.\033[0m\n'
-printf '\n  On your Wildbits, type:\n'
-printf '    \033[1;93mXGO\033[0m    — launch the program\n'
-printf '    \033[1;93mXLOAD\033[0m  — load it for tinkering\n\n'
